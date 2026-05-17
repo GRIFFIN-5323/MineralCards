@@ -1,0 +1,222 @@
+@page "/wizard"
+@using MineralCards.Models
+@inject HttpClient Http
+
+<PageTitle>Master ID Wizard</PageTitle>
+
+<div class="wrap">
+    <div class="wizard-header">
+        <h2>🔬 Master Identification Wizard</h2>
+        <p>Test your unknown sample against all primary mineral properties. If you aren't sure about a test, just click Skip!</p>
+    </div>
+
+    @if (AllMinerals == null || FilteredMinerals == null)
+    {
+        <p>Loading laboratory data...</p>
+    }
+    else
+    {
+        <div class="wizard-container">
+            <div class="step-box @(CurrentStep == 1 ? "active-step" : (CurrentStep > 1 ? "completed-step" : "hidden-step"))">
+                <h3>Step 1: General Luster</h3>
+                <p>Does the mineral look like a shiny metal, or is it non-metallic?</p>
+                <div class="btn-group">
+                    <button class="wbtn @(AnsLuster == "Metallic" ? "selected" : "")" @onclick="@(() => SetLuster("Metallic"))">Metallic</button>
+                    <button class="wbtn @(AnsLuster == "Non-Metallic" ? "selected" : "")" @onclick="@(() => SetLuster("Non-Metallic"))">Non-Metallic</button>
+                    <button class="wbtn skip-btn" @onclick="@(() => SetLuster("Skip"))">Skip</button>
+                </div>
+            </div>
+
+            <div class="step-box @(CurrentStep == 2 ? "active-step" : (CurrentStep > 2 && AnsLuster == "Non-Metallic" ? "completed-step" : "hidden-step"))">
+                <h3>Step 1b: Specific Luster</h3>
+                <p>What kind of non-metallic luster does it have?</p>
+                <div class="btn-group">
+                    <button class="wbtn @(AnsSpecificLuster == "Vitreous" ? "selected" : "")" @onclick="@(() => SetSpecificLuster("Vitreous"))">Vitreous (Glassy)</button>
+                    <button class="wbtn @(AnsSpecificLuster == "Pearly" ? "selected" : "")" @onclick="@(() => SetSpecificLuster("Pearly"))">Pearly</button>
+                    <button class="wbtn @(AnsSpecificLuster == "Resinous" ? "selected" : "")" @onclick="@(() => SetSpecificLuster("Resinous"))">Resinous / Greasy</button>
+                    <button class="wbtn @(AnsSpecificLuster == "Earthy" ? "selected" : "")" @onclick="@(() => SetSpecificLuster("Earthy"))">Earthy / Dull</button>
+                    <button class="wbtn skip-btn" @onclick="@(() => SetSpecificLuster("Skip"))">Skip</button>
+                </div>
+            </div>
+
+            <div class="step-box @(CurrentStep == 3 ? "active-step" : (CurrentStep > 3 ? "completed-step" : "hidden-step"))">
+                <h3>Step 2: Hardness</h3>
+                <p>Can it scratch a glass plate? (Hardness ≥ 5.5)</p>
+                <div class="btn-group">
+                    <button class="wbtn @(AnsHardness == "Hard" ? "selected" : "")" @onclick="@(() => SetHardness("Hard"))">Scratches Glass</button>
+                    <button class="wbtn @(AnsHardness == "Soft" ? "selected" : "")" @onclick="@(() => SetHardness("Soft"))">Softer than Glass</button>
+                    <button class="wbtn skip-btn" @onclick="@(() => SetHardness("Skip"))">Skip</button>
+                </div>
+            </div>
+
+            <div class="step-box @(CurrentStep == 4 ? "active-step" : (CurrentStep > 4 ? "completed-step" : "hidden-step"))">
+                <h3>Step 3: Streak</h3>
+                <p>Rub it on a ceramic streak plate. What color is the powder?</p>
+                <div class="btn-group">
+                    <button class="wbtn @(AnsStreak == "White" ? "selected" : "")" @onclick="@(() => SetStreak("White"))">White / Colorless</button>
+                    <button class="wbtn @(AnsStreak == "Colored" ? "selected" : "")" @onclick="@(() => SetStreak("Colored"))">Dark / Colored</button>
+                    <button class="wbtn skip-btn" @onclick="@(() => SetStreak("Skip"))">Skip</button>
+                </div>
+            </div>
+
+            <div class="step-box @(CurrentStep == 5 ? "active-step" : (CurrentStep > 5 ? "completed-step" : "hidden-step"))">
+                <h3>Step 4: Cleavage</h3>
+                <p>Does it break along smooth, flat planes?</p>
+                <div class="btn-group">
+                    <button class="wbtn @(AnsCleavage == "Yes" ? "selected" : "")" @onclick="@(() => SetCleavage("Yes"))">Has Cleavage</button>
+                    <button class="wbtn @(AnsCleavage == "No" ? "selected" : "")" @onclick="@(() => SetCleavage("No"))">No Cleavage</button>
+                    <button class="wbtn skip-btn" @onclick="@(() => SetCleavage("Skip"))">Skip</button>
+                </div>
+            </div>
+
+            <div class="step-box @(CurrentStep == 6 ? "active-step" : (CurrentStep > 6 ? "completed-step" : "hidden-step"))">
+                <h3>Step 5: Fracture</h3>
+                <p>When it shatters, does it form smooth, curved surfaces?</p>
+                <div class="btn-group">
+                    <button class="wbtn @(AnsFracture == "Conchoidal" ? "selected" : "")" @onclick="@(() => SetFracture("Conchoidal"))">Conchoidal (Curved)</button>
+                    <button class="wbtn @(AnsFracture == "Uneven" ? "selected" : "")" @onclick="@(() => SetFracture("Uneven"))">Uneven / Splintery</button>
+                    <button class="wbtn skip-btn" @onclick="@(() => SetFracture("Skip"))">Skip</button>
+                </div>
+            </div>
+
+            <div class="step-box @(CurrentStep == 7 ? "active-step" : (CurrentStep > 7 ? "completed-step" : "hidden-step"))">
+                <h3>Step 6: Outward Color</h3>
+                <p>What is the general overall color of the hand sample?</p>
+                <div class="btn-group">
+                    <button class="wbtn @(AnsColor == "Light" ? "selected" : "")" @onclick="@(() => SetColor("Light"))">Light (White/Clear/Pink)</button>
+                    <button class="wbtn @(AnsColor == "Dark" ? "selected" : "")" @onclick="@(() => SetColor("Dark"))">Dark (Black/Brown/Green)</button>
+                    <button class="wbtn skip-btn" @onclick="@(() => SetColor("Skip"))">Skip</button>
+                </div>
+            </div>
+
+            <div class="step-box @(CurrentStep == 8 ? "active-step" : (CurrentStep > 8 ? "completed-step" : "hidden-step"))">
+                <h3>Step 7: Crystal System</h3>
+                <p>If you can see the natural crystal shape, what does it look like?</p>
+                <div class="btn-group">
+                    <button class="wbtn @(AnsCrystal == "Isometric" ? "selected" : "")" @onclick="@(() => SetCrystal("Isometric"))">Isometric (Cubes)</button>
+                    <button class="wbtn @(AnsCrystal == "Hexagonal" ? "selected" : "")" @onclick="@(() => SetCrystal("Hexagonal"))">Hexagonal (Prisms)</button>
+                    <button class="wbtn @(AnsCrystal == "Other" ? "selected" : "")" @onclick="@(() => SetCrystal("Other"))">Other Systems</button>
+                    <button class="wbtn skip-btn" @onclick="@(() => SetCrystal("Skip"))">Skip</button>
+                </div>
+            </div>
+
+            @if (CurrentStep == 9)
+            {
+                <div class="results-box">
+                    <h3>🎯 Possible Matches: @FilteredMinerals.Count()</h3>
+                    <button class="reset-btn" @onclick="ResetWizard">Start Over</button>
+                    
+                    <div class="result-grid mt-4">
+                        @foreach (var m in FilteredMinerals)
+                        {
+                            <div class="rcard">
+                                @if (!string.IsNullOrEmpty(m.ImageUrl))
+                                {
+                                    <div class="rcard-img" style="background-image: url('@m.ImageUrl');"></div>
+                                }
+                                else
+                                {
+                                    <div class="rcard-img" style="background-color: #334155; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:12px;">No Photo</div>
+                                }
+                                <div class="rcard-body">
+                                    <h4>@m.Name</h4>
+                                    <span class="rformula">@m.Formula</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    
+                    @if (!FilteredMinerals.Any())
+                    {
+                        <div class="no-match">No minerals match this exact combination. Try starting over and skipping tests you aren't 100% sure about!</div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Mineral>? AllMinerals;
+    private IEnumerable<Mineral>? FilteredMinerals;
+
+    private int CurrentStep = 1;
+    private string AnsLuster = "";
+    private string AnsSpecificLuster = "";
+    private string AnsHardness = "";
+    private string AnsStreak = "";
+    private string AnsCleavage = "";
+    private string AnsFracture = "";
+    private string AnsColor = "";
+    private string AnsCrystal = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<Mineral>>("data/minerals.json");
+        if (result != null)
+        {
+            AllMinerals = result;
+            FilteredMinerals = AllMinerals;
+        }
+    }
+
+    private void SetLuster(string val) { AnsLuster = val; if (val == "Non-Metallic") CurrentStep = 2; else CurrentStep = 3; ApplyFilters(); }
+    private void SetSpecificLuster(string val) { AnsSpecificLuster = val; CurrentStep = 3; ApplyFilters(); }
+    private void SetHardness(string val) { AnsHardness = val; CurrentStep = 4; ApplyFilters(); }
+    private void SetStreak(string val) { AnsStreak = val; CurrentStep = 5; ApplyFilters(); }
+    private void SetCleavage(string val) { AnsCleavage = val; CurrentStep = 6; ApplyFilters(); }
+    private void SetFracture(string val) { AnsFracture = val; CurrentStep = 7; ApplyFilters(); }
+    private void SetColor(string val) { AnsColor = val; CurrentStep = 8; ApplyFilters(); }
+    private void SetCrystal(string val) { AnsCrystal = val; CurrentStep = 9; ApplyFilters(); }
+
+    private void ResetWizard()
+    {
+        CurrentStep = 1;
+        AnsLuster = ""; AnsSpecificLuster = ""; AnsHardness = ""; AnsStreak = ""; 
+        AnsCleavage = ""; AnsFracture = ""; AnsColor = ""; AnsCrystal = "";
+        FilteredMinerals = AllMinerals;
+    }
+
+    private void ApplyFilters()
+    {
+        if (AllMinerals == null) return;
+        var query = AllMinerals.AsEnumerable();
+
+        if (AnsLuster == "Metallic") query = query.Where(m => m.Luster != null && m.Luster.Contains("Metallic", StringComparison.OrdinalIgnoreCase));
+        if (AnsLuster == "Non-Metallic") query = query.Where(m => m.Luster != null && (m.Luster.Contains("earthy", StringComparison.OrdinalIgnoreCase) || !m.Luster.Contains("Metallic", StringComparison.OrdinalIgnoreCase)));
+
+        if (AnsSpecificLuster == "Vitreous") query = query.Where(m => m.Luster != null && m.Luster.Contains("Vitreous", StringComparison.OrdinalIgnoreCase));
+        if (AnsSpecificLuster == "Pearly") query = query.Where(m => m.Luster != null && m.Luster.Contains("Pearly", StringComparison.OrdinalIgnoreCase));
+        if (AnsSpecificLuster == "Resinous") query = query.Where(m => m.Luster != null && (m.Luster.Contains("Resinous", StringComparison.OrdinalIgnoreCase) || m.Luster.Contains("Greasy", StringComparison.OrdinalIgnoreCase)));
+        if (AnsSpecificLuster == "Earthy") query = query.Where(m => m.Luster != null && (m.Luster.Contains("Earthy", StringComparison.OrdinalIgnoreCase) || m.Luster.Contains("Dull", StringComparison.OrdinalIgnoreCase)));
+
+        if (AnsHardness == "Hard") query = query.Where(m => IsHard(m.Hardness));
+        if (AnsHardness == "Soft") query = query.Where(m => !IsHard(m.Hardness));
+
+        if (AnsStreak == "White") query = query.Where(m => m.Streak != null && m.Streak.Contains("White", StringComparison.OrdinalIgnoreCase));
+        if (AnsStreak == "Colored") query = query.Where(m => m.Streak != null && !m.Streak.Contains("White", StringComparison.OrdinalIgnoreCase));
+
+        if (AnsCleavage == "Yes") query = query.Where(m => m.Cleavage != null && !m.Cleavage.Contains("None", StringComparison.OrdinalIgnoreCase));
+        if (AnsCleavage == "No") query = query.Where(m => m.Cleavage != null && m.Cleavage.Contains("None", StringComparison.OrdinalIgnoreCase));
+
+        if (AnsFracture == "Conchoidal") query = query.Where(m => m.Fracture != null && m.Fracture.Contains("Conchoidal", StringComparison.OrdinalIgnoreCase));
+        if (AnsFracture == "Uneven") query = query.Where(m => m.Fracture != null && !m.Fracture.Contains("Conchoidal", StringComparison.OrdinalIgnoreCase));
+
+        if (AnsColor == "Light") query = query.Where(m => m.ColorNames != null && (m.ColorNames.Contains("White", StringComparison.OrdinalIgnoreCase) || m.ColorNames.Contains("Colorless", StringComparison.OrdinalIgnoreCase) || m.ColorNames.Contains("Pink", StringComparison.OrdinalIgnoreCase)));
+        if (AnsColor == "Dark") query = query.Where(m => m.ColorNames != null && (m.ColorNames.Contains("Black", StringComparison.OrdinalIgnoreCase) || m.ColorNames.Contains("Brown", StringComparison.OrdinalIgnoreCase) || m.ColorNames.Contains("Green", StringComparison.OrdinalIgnoreCase) || m.ColorNames.Contains("Gray", StringComparison.OrdinalIgnoreCase)));
+
+        if (AnsCrystal == "Isometric") query = query.Where(m => m.CrystalSystem != null && m.CrystalSystem.Contains("Isometric", StringComparison.OrdinalIgnoreCase));
+        if (AnsCrystal == "Hexagonal") query = query.Where(m => m.CrystalSystem != null && m.CrystalSystem.Contains("Hexagonal", StringComparison.OrdinalIgnoreCase));
+        if (AnsCrystal == "Other") query = query.Where(m => m.CrystalSystem != null && !m.CrystalSystem.Contains("Isometric", StringComparison.OrdinalIgnoreCase) && !m.CrystalSystem.Contains("Hexagonal", StringComparison.OrdinalIgnoreCase));
+
+        FilteredMinerals = query.ToList();
+    }
+
+    private bool IsHard(string? hStr)
+    {
+        if (string.IsNullOrEmpty(hStr)) return false;
+        var parts = hStr.Replace("–", "-").Split('-');
+        if (double.TryParse(parts[0], out double h)) return h >= 5.5;
+        return false;
+    }
+}

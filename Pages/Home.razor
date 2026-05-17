@@ -1,0 +1,305 @@
+﻿@page "/"
+@using MineralCards.Models
+@using System.Text.RegularExpressions
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>Mineral Database</PageTitle>
+
+<div class="wrap">
+    <div class="header-controls">
+        <div class="search-row">
+            <input type="text" @bind="SearchTerm" @bind:event="oninput" placeholder="Search mineral name, formula, or group..." class="search-input" />
+        </div>
+        <button class="study-btn @(IsStudyMode ? "active-study" : "")" @onclick="ToggleStudyMode">
+            @(IsStudyMode ? "🧠 Study Mode: ON" : "📖 Study Mode: OFF")
+        </button>
+    </div>
+
+    <div class="filter-row">
+        <select @bind="FilterLuster" class="adv-select">
+            <option value="">Any Luster</option>
+            <option value="Metallic">Metallic</option>
+            <option value="Vitreous">Vitreous</option>
+            <option value="Pearly">Pearly</option>
+        </select>
+
+        <select @bind="FilterCleavage" class="adv-select">
+            <option value="">Any Cleavage</option>
+            <option value="None">None</option>
+            <option value="1 direction">1 Direction</option>
+            <option value="2 directions">2 Directions</option>
+            <option value="3 directions">3+ Directions</option>
+        </select>
+
+        <select @bind="FilterCrystal" class="adv-select">
+            <option value="">Any Crystal System</option>
+            <option value="Isometric">Isometric (Cubic)</option>
+            <option value="Hexagonal">Hexagonal / Trigonal</option>
+            <option value="Orthorhombic">Orthorhombic</option>
+        </select>
+
+        <select @bind="FilterDensity" class="adv-select">
+            <option value="">Any Density</option>
+            <option value="light">Light (&lt; 2.8 g/cm³)</option>
+            <option value="medium">Average (2.8 - 4.0 g/cm³)</option>
+            <option value="heavy">Heavy (&gt; 4.0 g/cm³)</option>
+        </select>
+
+        <button class="fbtn @(ActiveFilter == "fizz" ? "active" : "")" @onclick="@(() => ToggleQuickFilter("fizz"))">🧪 Acid fizz</button>
+        <button class="fbtn @(ActiveFilter == "hard" ? "active" : "")" @onclick="@(() => ToggleQuickFilter("hard"))">💎 Hard (H ≥ 6)</button>
+
+        <button class="astro-btn @(ShowAstroOnly ? "active-astro" : "")" @onclick="ToggleAstro">
+            🚀 Astrobiology Focus
+        </button>
+    </div>
+
+    @if (FilteredMinerals == null)
+    {
+        <p><em>Loading advanced laboratory data...</em></p>
+    }
+    else
+    {
+        <div class="count">@FilteredMinerals.Count() minerals shown</div>
+        
+        <div class="cards">
+            @foreach (var mineral in FilteredMinerals)
+            {
+                <div class="mcard @(ExpandedCard == mineral.Name ? "open" : "")" @onclick="() => ToggleCard(mineral.Name)">
+                    
+                    <div class="image-container">
+                        @if (!string.IsNullOrEmpty(mineral.ImageUrl))
+                        {
+                            <div class="mcard-image" style="background-image: url('@mineral.ImageUrl');"></div>
+                        }
+                        else
+                        {
+                            <div class="mcard-image empty-image">No Photo</div>
+                        }
+                    </div>
+
+                    <div class="mcard-head">
+                        @if (IsStudyMode && ExpandedCard != mineral.Name)
+                        {
+                            <div class="mname study-hidden">???</div>
+                            <div class="mformula study-hidden">Tap to reveal</div>
+                        }
+                        else
+                        {
+                            <div class="mname">@mineral.Name</div>
+                            <div class="mformula">@mineral.Formula <span class="group-tag">• @mineral.MineralGroup</span></div>
+                        }
+                        
+                        <div class="mbadges">
+                            <span class="badge hardness-badge">H @mineral.Hardness</span>
+                            @if (!string.IsNullOrEmpty(mineral.Luster)) { <span class="badge luster-badge">@mineral.Luster.Split(' ')[0]</span> }
+                            @if (mineral.Acid) { <span class="badge acid-badge">Acid fizz</span> }
+                            @if (mineral.IsAstrobiology) { <span class="badge badge-astro">🚀 Astro</span> }
+                        </div>
+                    </div>
+
+                    @if (ExpandedCard == mineral.Name)
+                    {
+                        <div class="mcard-body" @onclick:stopPropagation="true">
+                            <div class="prop-section">
+                                <h5>🔍 Primary Identification</h5>
+                                <div class="prop-grid">
+                                    <span class="plabel prop-color">Color</span><span class="pval">@mineral.ColorNames</span>
+                                    <span class="plabel prop-streak">Streak</span><span class="pval">@mineral.Streak</span>
+                                    <span class="plabel prop-luster">Luster</span><span class="pval">@mineral.Luster</span>
+                                    <span class="plabel prop-hardness">Hardness</span><span class="pval">@mineral.Hardness</span>
+                                    <span class="plabel prop-cleavage">Cleavage</span><span class="pval">@mineral.Cleavage</span>
+                                    <span class="plabel prop-fracture">Fracture</span><span class="pval">@mineral.Fracture</span>
+                                </div>
+                            </div>
+
+                            <div class="prop-section">
+                                <h5>🧊 Crystallography</h5>
+                                <div class="prop-grid">
+                                    <span class="plabel prop-crystal">System</span><span class="pval">@mineral.CrystalSystem</span>
+                                    <span class="plabel prop-sym">Symmetry</span><span class="pval">@mineral.Symmetry</span>
+                                    <span class="plabel prop-morph">Morphology</span><span class="pval">@mineral.CrystalMorphology</span>
+                                </div>
+                            </div>
+
+                            <div class="prop-section">
+                                <h5>🧪 Advanced Diagnostics</h5>
+                                <div class="prop-grid">
+                                    <span class="plabel prop-density">Sp. Gravity</span><span class="pval">@mineral.Density</span>
+                                    <span class="plabel prop-optics">Diaphaneity</span><span class="pval">@mineral.Diaphaneity</span>
+                                    <span class="plabel prop-tenacity">Tenacity</span><span class="pval">@mineral.Tenacity</span>
+                                    <span class="plabel prop-mag">Magnetism</span><span class="pval">@mineral.Magnetism</span>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(mineral.Tip))
+                            {
+                                <div class="tip-box">
+                                    <strong>💡 Lab Tip:</strong> @mineral.Tip
+                                </div>
+                            }
+
+                            @if (mineral.IsAstrobiology && !string.IsNullOrEmpty(mineral.AstroTip))
+                            {
+                                <div class="astro-box">
+                                    <strong>🚀 Planetary Geology:</strong> @mineral.AstroTip
+                                </div>
+                            }
+                        </div>
+
+
+                        
+                    }
+                </div>
+
+  @if (ExpandedCard == mineral.Name)
+            {
+                <div class="mcard-body" @onclick:stopPropagation="true">
+                    @if (mineral.IsAstrobiology && !string.IsNullOrEmpty(mineral.AstroTip))
+                    {
+                        <div class="astro-box">
+                            <strong>🚀 Planetary Geology:</strong> @mineral.AstroTip
+                        </div>
+                    }
+
+               <div class="mt-4" style="background: linear-gradient(180deg, #0f172a 0%, #020617 100%); border-radius: 12px; border: 1px solid #1e293b; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.4);">
+    
+    <div style="background-color: rgba(30, 41, 59, 0.4); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b;">
+        <div>
+            <span style="color: #64748b; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 4px;">
+                Crystallography
+            </span>
+            <span style="color: #f8fafc; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px;">
+                <i class="bi bi-hexagon-half" style="color: #3b82f6; margin-right: 8px;"></i>@mineral.CrystalSystem System
+            </span>
+        </div>
+        
+        <div style="text-align: right;">
+            <span style="color: #94a3b8; font-size: 0.75rem; background: rgba(15, 23, 42, 0.8); padding: 6px 10px; border-radius: 20px; border: 1px solid #334155; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="bi bi-arrows-move"></i> Interactive 3D
+            </span>
+        </div>
+    </div>
+
+    <div id="canvas-@mineral.Name.Replace(" ", "")" style="height: 260px; width: 100%; position: relative;"></div>
+    
+</div>
+                </div>
+            }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Mineral>? AllMinerals;
+    private string SearchTerm = "";
+    private string ActiveFilter = "all";
+    private string FilterLuster = "";
+    private string FilterCleavage = "";
+    private string FilterCrystal = "";
+    private string FilterDensity = "";
+    private bool ShowAstroOnly = false;
+    private string? ExpandedCard = null;
+    private bool IsStudyMode = false; 
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<Mineral>>("data/minerals.json");
+        if (result != null) AllMinerals = result;
+    }
+
+    private IEnumerable<Mineral>? FilteredMinerals
+    {
+        get
+        {
+            if (AllMinerals == null) return null;
+            var query = AllMinerals.AsEnumerable();
+
+            // Text Search
+            if (!string.IsNullOrWhiteSpace(SearchTerm))
+                query = query.Where(m => 
+                    (m.Name != null && m.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                    (m.Formula != null && m.Formula.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                    (m.MineralGroup != null && m.MineralGroup.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+                );
+                
+            // Dropdown Filters
+            if (!string.IsNullOrEmpty(FilterLuster))
+                query = query.Where(m => m.Luster != null && m.Luster.Contains(FilterLuster, StringComparison.OrdinalIgnoreCase));
+            
+            if (!string.IsNullOrEmpty(FilterCleavage))
+                query = query.Where(m => m.Cleavage != null && m.Cleavage.Contains(FilterCleavage, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(FilterCrystal))
+                query = query.Where(m => m.CrystalSystem != null && m.CrystalSystem.Contains(FilterCrystal, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(FilterDensity))
+                query = query.Where(m => MatchesDensityRange(m.Density, FilterDensity));
+
+            // Quick Button Filters
+            if (ActiveFilter == "fizz") query = query.Where(m => m.Acid);
+            if (ActiveFilter == "hard") query = query.Where(m => m.Hardness != null && double.TryParse(m.Hardness.Replace("–", "-").Split('-')[0], out double h) && h >= 6);
+            if (ShowAstroOnly) query = query.Where(m => m.IsAstrobiology);
+
+            return query;
+        }
+    }
+
+    private bool MatchesDensityRange(string? densityStr, string rangeTarget)
+    {
+        if (string.IsNullOrEmpty(densityStr)) return false;
+        var match = Regex.Match(densityStr, @"\d+(\.\d+)?");
+        if (match.Success && double.TryParse(match.Value, out double d))
+        {
+            if (rangeTarget == "light") return d < 2.8;
+            if (rangeTarget == "medium") return d >= 2.8 && d <= 4.0;
+            if (rangeTarget == "heavy") return d > 4.0;
+        }
+        return false;
+    }
+
+    private void ToggleQuickFilter(string filter)
+    {
+        if (ActiveFilter == filter) ActiveFilter = "all"; 
+        else ActiveFilter = filter; 
+        ExpandedCard = null; 
+    }
+
+    private void ToggleAstro() { ShowAstroOnly = !ShowAstroOnly; ExpandedCard = null; }
+    private void ToggleStudyMode() { IsStudyMode = !IsStudyMode; ExpandedCard = null; }
+
+    private void ToggleCard(string? mineralName)
+    {
+        if (ExpandedCard == mineralName) { ExpandedCard = null; }
+        else { ExpandedCard = mineralName; }
+    }
+
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    // If a card is expanded, instantly draw its specific 3D shape!
+    if (!string.IsNullOrEmpty(ExpandedCard))
+    {
+        // Find the mineral data that matches the open card name
+        var activeMineral = FilteredMinerals?.FirstOrDefault(m => m.Name == ExpandedCard);
+        
+        if (activeMineral != null && !string.IsNullOrEmpty(activeMineral.CrystalSystem))
+        {
+            string safeName = activeMineral.Name.Replace(" ", "");
+            string boxId = $"canvas-{safeName}";
+            
+            try
+            {
+                // Give Blazor a safe 100ms window to build the card before JavaScript looks for it
+                await Task.Delay(100);
+                await JS.InvokeVoidAsync("loadCrystal3D", boxId, activeMineral.CrystalSystem);
+            }
+            catch (Exception ex)
+            {
+                // Prevents the yellow unhandled error bar from breaking the app UI
+                System.Diagnostics.Debug.WriteLine($"3D Canvas status: {ex.Message}");
+            }
+        }
+    }
+}
+}

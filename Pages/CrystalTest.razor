@@ -1,0 +1,34 @@
+@page "/crystals"
+@inject IJSRuntime JS
+
+<div class="px-3">
+    <h3 style="color: #f8fafc; font-weight: 700;">Crystal System Viewer</h3>
+    <p style="color: #94a3b8;">Interactive 3D visualization of mineral structures.</p>
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <button class="btn btn-outline-primary" @onclick='() => RenderShape("Isometric")'>Isometric</button>
+        <button class="btn btn-outline-primary" @onclick='() => RenderShape("Tetragonal")'>Tetragonal</button>
+        <button class="btn btn-outline-primary" @onclick='() => RenderShape("Orthorhombic")'>Orthorhombic</button>
+        <button class="btn btn-outline-primary" @onclick='() => RenderShape("Hexagonal")'>Hexagonal</button>
+        <button class="btn btn-outline-primary" @onclick='() => RenderShape("Trigonal")'>Trigonal</button>
+        <button class="btn btn-outline-primary" @onclick='() => RenderShape("Monoclinic")'>Monoclinic</button>
+        <button class="btn btn-outline-primary" @onclick='() => RenderShape("Triclinic")'>Triclinic</button>
+    </div>
+
+    <div id="3d-canvas" style="height: 400px; width: 100%; background-color: #0f172a; border-radius: 10px; border: 1px solid #1e293b; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);"></div>
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RenderShape("Isometric");
+        }
+    }
+
+    private async Task RenderShape(string system)
+    {
+        await JS.InvokeVoidAsync("loadCrystal3D", "3d-canvas", system);
+    }
+}

@@ -1,0 +1,66 @@
+@page "/map"
+@inject IJSRuntime JS
+
+<PageTitle>Global Sources</PageTitle>
+
+<div class="map-container" style="padding: 20px;">
+    <h3 style="color: #f8fafc; font-weight: 700; margin-bottom: 20px;">
+        Explore where our laboratory data is sourced from.
+    </h3>
+
+    <div style="background-color: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 15px; display: flex; gap: 10px;">
+        <input type="text" 
+               @bind="SearchTerm" 
+               @bind:event="oninput" 
+               @onkeyup="HandleKeyPress"
+               placeholder="Enter a mineral name (e.g., Quartz, Gold)..." 
+               style="flex: 1; padding: 10px 15px; border-radius: 6px; border: 1px solid #334155; background-color: #020617; color: white;" />
+               
+        <button @onclick="ApplyFilter" 
+                style="padding: 10px 20px; background-color: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+            <i class="bi bi-search"></i> Locate
+        </button>
+        
+        <button @onclick="ResetMap" 
+                style="padding: 10px 20px; background-color: #334155; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+            Reset
+        </button>
+    </div>
+
+    <div id="mineralMap" style="height: 500px; width: 100%; border-radius: 8px; border: 2px solid #1e293b;"></div>
+</div>
+
+@code {
+    private string SearchTerm = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Initialize the map when the page loads
+            await JS.InvokeVoidAsync("mapHelper.initMap", "mineralMap");
+        }
+    }
+
+    // Trigger the JS filter when they click "Locate"
+    private async Task ApplyFilter()
+    {
+        await JS.InvokeVoidAsync("mapHelper.filterMap", SearchTerm);
+    }
+
+    // Trigger filter if they hit the "Enter" key
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ApplyFilter();
+        }
+    }
+
+    // Show all pins again
+    private async Task ResetMap()
+    {
+        SearchTerm = "";
+        await JS.InvokeVoidAsync("mapHelper.filterMap", "All");
+    }
+}

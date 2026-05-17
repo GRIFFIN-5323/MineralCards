@@ -1,0 +1,27 @@
+.wrap { padding: 2rem; font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); min-height: 100vh; }
+.wizard-header h2 { font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+.wizard-header p { color: #64748b; margin-bottom: 30px; font-size: 16px; }
+.wizard-container { max-width: 750px; margin: 0 auto; padding-bottom: 50px;}
+.step-box { background: white; border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: all 0.3s ease; border-left: 4px solid transparent; }
+.active-step { border-left-color: #3b82f6; transform: scale(1.02); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+.completed-step { opacity: 0.5; border-left-color: #10b981; pointer-events: none;}
+.hidden-step { display: none; }
+.step-box h3 { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 8px; margin-top: 0; }
+.step-box p { color: #64748b; margin-bottom: 20px; font-size: 14px; }
+.btn-group { display: flex; gap: 12px; flex-wrap: wrap; }
+.wbtn { flex: 1; min-width: 140px; padding: 12px; border-radius: 12px; border: 2px solid #e2e8f0; background: white; color: #475569; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+.wbtn:hover { border-color: #cbd5e1; background: #f8fafc; }
+.wbtn.selected { border-color: #3b82f6; background: #eff6ff; color: #2563eb; }
+.skip-btn { border-style: dashed; color: #94a3b8; }
+.skip-btn:hover { border-color: #94a3b8; background: #f1f5f9; color: #475569;}
+.results-box { background: #0f172a; border-radius: 20px; padding: 30px; margin-top: 24px; color: white; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+.results-box h3 { margin-top: 0; color: #f8fafc; }
+.reset-btn { background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.reset-btn:hover { background: #dc2626; }
+.result-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 24px; }
+.rcard { background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
+.rcard-img { width: 100%; height: 140px; background-size: cover; background-position: center; border-bottom: 1px solid #334155;}
+.rcard-body { padding: 16px; }
+.rcard h4 { margin: 0 0 4px 0; font-size: 16px; color: white; }
+.rformula { font-size: 12px; color: #94a3b8; }
+.no-match { margin-top: 20px; padding: 16px; background: rgba(239, 68, 68, 0.1); color: #fca5a5; border-radius: 8px; border: 1px solid #ef4444; font-weight: 500;}
