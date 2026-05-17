@@ -23,6 +23,12 @@ jobs:
     - name: Change base-tag in index.html
       run: sed -i 's/<base href="\/" \/>/<base href="\/MineralCards\/" \/>/g' release/wwwroot/index.html
       
+    - name: Fix blazor.webassembly.js hash in index.html
+      run: |
+        cd release/wwwroot
+        ACTUAL_JS=$(ls _framework/blazor.webassembly.*.js | head -n 1)
+        sed -i "s|_framework/blazor.webassembly.js|$ACTUAL_JS|g" index.html
+      
     - name: Add .nojekyll file
       run: touch release/wwwroot/.nojekyll
       
